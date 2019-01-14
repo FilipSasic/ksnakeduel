@@ -45,19 +45,21 @@ void Intelligence::referenceTron(Tron *t)
 //
 
 /** retrieves the opponentSkill */
-int Intelligence::opponentSkill() {
-	switch (Kg::difficultyLevel()) {
+int Intelligence::opponentSkill()
+{
+	switch (Kg::difficultyLevel())
+	{
 		case KgDifficultyLevel::VeryEasy:
 			return 1;
 		default:
 		case KgDifficultyLevel::Easy:
-			return 1;
-		case KgDifficultyLevel::Medium:
 			return 2;
+		case KgDifficultyLevel::Medium:
+			return 3;
 		case KgDifficultyLevel::Hard:
-			return 3;
+			return 4;
 		case KgDifficultyLevel::VeryHard:
-			return 3;
+			return 5;
 	}
 }
 
@@ -120,11 +122,156 @@ void Intelligence::changeDirection(int playerNr,int dis_right,int dis_left)
     }
 }
 
+/** find shortest path to all reachable fields */
+void Intelligence::dijkstra(std::vector<std::vector <int>>& distances,int posX,int posY)
+{
+	
+	int height = m_tron->getPlayField()->getHeight();
+	int width = m_tron->getPlayField()->getWidth();
+	
+	//matrix of traversed fields
+	std::vector<std::vector <int>> traversed(width, std::vector<int>(height));
+	
+	//Initialization of distances and traverse matrix
+	for(int i = 0;i < width;i++)
+	{
+		for(int j = 0;j < height;j++)
+		{
+			distances[i][j] = 10000;
+			traversed[i][j] = 0;
+		}
+	}
+	
+	//Starting point initialization
+	distances[posX][posY] = 0;
+	traversed[posX][posY] = 1;
+
+	//Adjacent fields to starting position are set to 1 distance if valid
+	
+	//Setting left adjacent field to 1
+ 	int posLeftX = posX - 1;
+	int posLeftY = posY;
+	if(posLeftX < m_tron->getPlayField()->getWidth() && posLeftX >= 0 && posLeftY < m_tron->getPlayField()->getHeight() && posLeftY >= 0 && m_tron->getPlayField()->getObjectAt(posLeftX, posLeftY)->getObjectType() == ObjectType::Object)
+	{
+		distances[posLeftX][posLeftY] = 1;
+	}
+	
+	//Setting right adjacent field to 1
+	int posRightX = posX + 1;
+	int posRightY = posY;
+	if(posRightX < m_tron->getPlayField()->getWidth() && posRightX >= 0 && posRightY < m_tron->getPlayField()->getHeight() && posRightY >= 0 && m_tron->getPlayField()->getObjectAt(posRightX, posRightY)->getObjectType() == ObjectType::Object)
+	{
+		distances[posRightX][posRightY] = 1;
+	}
+	
+	//Setting up adjacent field to 1
+	int posUpX = posX ;
+	int posUpY = posY + 1;
+	if(posUpX < m_tron->getPlayField()->getWidth() && posUpX >= 0 &&posUpY < m_tron->getPlayField()->getHeight() && posUpY >= 0 && m_tron->getPlayField()->getObjectAt(posUpX,posUpY)->getObjectType() == ObjectType::Object)
+	{
+		distances[posUpX][posUpY] = 1;
+	}
+	
+	//Setting downd adjacent field to 1
+	int posDownX = posX;
+	int posDownY = posY - 1;;
+	if(posDownX < m_tron->getPlayField()->getWidth() && posDownX >= 0 && posDownY < m_tron->getPlayField()->getHeight() && posDownY >= 0 && m_tron->getPlayField()->getObjectAt(posDownX, posDownY)->getObjectType() == ObjectType::Object)
+	{
+		distances[posDownX][posDownY] = 1;
+	}
+	
+	//These are coordinates for vertice n from dijkstra algorithm
+	int nX;
+	int nY;
+	
+	//Indicator for change in nX,nY 
+	//If no change algorithm is finished
+	int ind;
+	
+	//Infinite loop that breaks when no change in nX,nY
+	while(1)
+	{
+	
+		nX = 0;
+		nY = 0;
+		ind = -1;
+		
+		//Double for loop for finding minimum candiate for nX,nY
+		for(int i = 0;i < width;i++)
+		{
+			for(int j = 0;j < height;j++)
+			{
+				if(distances[i][j] < distances[nX][nY] && traversed[i][j] != 1 && m_tron->getPlayField()->getObjectAt(nX, nY)->getObjectType() == ObjectType::Object   && distances[i][j] != 10000  )
+				{
+					nX = i;
+					nY = j;
+					ind = 1;
+				}
+			}	
+		}
+		
+		//Marking the field as visited
+		traversed[nX][nY] = 1;
+		
+		//If no change to nX,nY break
+		if(ind == -1)
+		{
+			break;
+		}
+
+		//Checking adjacent fields and setting their distances to smallest so far	
+		posLeftX = nX - 1;
+		posLeftY = nY;
+		
+		//Checking adjacent fields to the left
+		if(posLeftX < m_tron->getPlayField()->getWidth() && posLeftX >= 0 && posLeftY < m_tron->getPlayField()->getHeight() && posLeftY >= 0 && m_tron->getPlayField()->getObjectAt(posLeftX, posLeftY)->getObjectType() == ObjectType::Object)
+		{
+			if(distances[posLeftX][posLeftY] > (distances[nX][nY] + 1))
+			{				
+				distances[posLeftX][posLeftY] = distances[nX][nY] + 1;
+			}
+		}
+		
+		//Checking adjacent fields to the right
+		posRightX = nX + 1;
+		posRightY = nY;
+		if(posRightX < m_tron->getPlayField()->getWidth() && posRightX >= 0 && posRightY < m_tron->getPlayField()->getHeight() && posRightY >= 0 && m_tron->getPlayField()->getObjectAt(posRightX, posRightY)->getObjectType() == ObjectType::Object)
+		{
+			if(distances[posRightX][posRightY] > (distances[nX][nY] + 1))
+			{
+				distances[posRightX][posRightY] = distances[nX][nY] + 1;
+			}
+		}
+		
+		//Checking adjacent fields to the up
+		posUpX = nX ;
+		posUpY = nY + 1;
+		if(posUpX < m_tron->getPlayField()->getWidth() && posUpX >= 0 &&posUpY < m_tron->getPlayField()->getHeight() &&posUpY >= 0 && m_tron->getPlayField()->getObjectAt(posUpX,posUpY)->getObjectType() == ObjectType::Object)
+		{
+			if(distances[posUpX][posUpY] > (distances[nX][nY] + 1))
+			{
+				distances[posUpX][posUpY] = distances[nX][nY] + 1;
+			}
+		}
+		
+		//Checking adjacent fields to the down
+		posDownX = nX;
+		posDownY = nY - 1;
+		if(posDownX < m_tron->getPlayField()->getWidth() && posDownX >= 0 && posDownY < m_tron->getPlayField()->getHeight() && posDownY >= 0 && m_tron->getPlayField()->getObjectAt(posDownX, posDownY)->getObjectType() == ObjectType::Object)
+		{
+			if(distances[posDownX][posDownY] > (distances[nX][nY] + 1))
+			{
+				distances[posDownX][posDownY] = distances[nX][nY] + 1;
+			}		
+		}
+	}	
+}
+
 // This part is partly ported from
 // xtron-1.1 by Rhett D. Jacobs <rhett@hotel.canberra.edu.au>
-void Intelligence::think(int playerNr)
+void Intelligence::think(int chance,int playerNr)
 {
-	if (opponentSkill() != 1)
+	if (opponentSkill() != 1 && opponentSkill() != 3  && opponentSkill() != 5)
 	{
 		int opponent=(playerNr==1)? 0 : 1;
 
@@ -289,7 +436,6 @@ void Intelligence::think(int playerNr)
 			default:
 				break;
 		}
-
 		int doPercentage = 100;
 		switch(opponentSkill())
 		{
@@ -299,8 +445,8 @@ void Intelligence::think(int playerNr)
 			case 2:
 				doPercentage=5;
 				break;
-			case 3:
-				doPercentage=90;
+			case 4:
+				doPercentage=100;
 				break;
 		}
 
@@ -518,7 +664,7 @@ void Intelligence::think(int playerNr)
 	}
 	// This part is completely ported from
 	// xtron-1.1 by Rhett D. Jacobs <rhett@hotel.canberra.edu.au>
-	else // Settings::skill() == Settings::EnumSkill::Easy
+	else if (opponentSkill() == 1) // Settings::skill() == Settings::EnumSkill::Easy
 	{
 		PlayerDirections::Direction sides[2];
 		sides[0] = PlayerDirections::None;
@@ -630,6 +776,161 @@ void Intelligence::think(int playerNr)
 				}
 			}
 		}
+	//Very Hard difficulty
+	}else if (opponentSkill() == 5)
+	{
+		//100 percent chance that will play a good move
+		Intelligence::think_better(100,playerNr);
+
+	//Medium - adapting difficulty
+	}else if (opponentSkill() == 3)
+	{
+		Intelligence::think_better(chance,playerNr);
+		
 	}
 }
+
+//Better helper AI function based on dijksta path finding heuristics
+void Intelligence::think_better(int chance,int playerNr)
+{
+	
+	int opponent=(playerNr==1)? 0 : 1;
+	
+	//First we define sides and flags depending on orientation of the palyer
+	//We will use side later to turn left or right
+	PlayerDirections::Direction sides[2];
+	sides[0] = PlayerDirections::None;
+	sides[1] = PlayerDirections::None;
+	int flags[6] = {0,0,0,0,0,0};
+	
+	int index[2];
+	switch (m_tron->getPlayer(playerNr)->getDirection())
+	{
+		case PlayerDirections::Left:
+			//forward flags
+			flags[0] = -1;
+			flags[1] = 0;
+			//left flags
+			flags[2] = 0;
+			flags[3] = 1;
+			// right flags
+			flags[4] = 0;
+			flags[5] = -1;
+			//turns to either side
+			sides[0] = PlayerDirections::Down;
+			sides[1] = PlayerDirections::Up;
+			break;
+		case PlayerDirections::Right:
+			flags[0] = 1;
+			flags[1] = 0;
+			flags[2] = 0;
+			flags[3] = -1;
+			flags[4] = 0;
+			flags[5] = 1;
+			sides[0] = PlayerDirections::Up;
+			sides[1] = PlayerDirections::Down;
+			break;
+		case PlayerDirections::Up:
+			flags[0] = 0;
+			flags[1] = -1;
+			flags[2] = -1;
+			flags[3] = 0;
+			flags[4] = 1;
+			flags[5] = 0;
+			sides[0] = PlayerDirections::Left;
+			sides[1] = PlayerDirections::Right;
+			break;
+		case PlayerDirections::Down:
+			flags[0] = 0;
+			flags[1] = 1;
+			flags[2] = 1;
+			flags[3] = 0;
+			flags[4] = -1;
+			flags[5] = 0;
+			sides[0] = PlayerDirections::Right;
+			sides[1] = PlayerDirections::Left;
+			break;
+		default:
+			break;
+	}
+	
+	int width = m_tron->getPlayField()->getWidth();
+	int height = m_tron->getPlayField()->getHeight();
+	
+	//Get position of the AI bot
+	int aiX = m_tron->getPlayer(playerNr)->getX();
+	int aiY = m_tron->getPlayer(playerNr)->getY();
+	
+	//Get position of the opponent
+	int oppX = m_tron->getPlayer(opponent)->getX();
+	int oppY = m_tron->getPlayer(opponent)->getY();
+	
+	//Define distances matrix for opponent
+	std::vector<std::vector <int>> distancesOpp(width, std::vector<int>(height));
+	
+	//Define distances matrix for AI 
+	std::vector<std::vector <int>> distancesAI(width, std::vector<int>(height));
+	
+	//Fill opponent distances matrix with shortest paths using Dijstra algorithm
+	Intelligence::dijkstra(distancesOpp,oppX,oppY);
+	
+	//move will determine which move we will play at the end
+	int move = 0;
+	
+	//Counters which count for how many field on board AI has better position then opponent
+	int maxBestPositionCounter = 0;
+	int BestPositionCounter = 0;
+	
+	/* Loop that evaluates all 3 possible moves and determines which is the best
+	by comparing how many filelds AI can reach first vs how many can opponent
+	the more is better and we choose that move,
+	this is main heuristic for this algorithm */
+	
+	for(int i = 0;i < 3;i++)
+	{
+		index[0] = aiX + flags[2*i];
+		index[1] = aiY + flags[2*i + 1];
+		if(index[0] < m_tron->getPlayField()->getWidth() && index[0] >= 0 && index[1] < m_tron->getPlayField()->getHeight() && index[1] >= 0 && m_tron->getPlayField()->getObjectAt(index[0], index[1])->getObjectType() == ObjectType::Object)
+		{
+			Intelligence::dijkstra(distancesAI,index[0],index[1]);
+			BestPositionCounter = 0;
+			for(int i = 0;i < width;i++)
+			{
+				for(int j = 0;j < height;j++)
+				{
+					if(distancesAI[i][j] < distancesOpp[i][j] - 1)
+					{
+						BestPositionCounter ++;
+					}
+				}
+			}
+			
+
+			if(BestPositionCounter > maxBestPositionCounter)
+			{
+				maxBestPositionCounter = BestPositionCounter;
+				move = i;	
+			}
+		}
+	} 
+	
+	//This is chance of algorithm making a mistake
+	int error = (int)m_random.getLong(100);
+	if(error > chance)
+	{
+		move = 0;
+	}
+	//Make a move, turn left
+	if(move == 1)
+	{
+		m_tron->getPlayer(playerNr)->setDirection(sides[0]);
+		
+	//Make a move, turn right
+	}else if(move == 2)
+	{
+		m_tron->getPlayer(playerNr)->setDirection(sides[1]);
+	}
+
+}
+
 

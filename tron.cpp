@@ -59,6 +59,9 @@ Tron::Tron(QWidget *parent) : QWidget(parent)
 
 	gameBlocked = false;
 	gameEnded = true;
+	
+	//Chance for AI error
+	chance = 95;
 
 	timer = new QTimer(this);
 	//loadSettings();
@@ -348,6 +351,7 @@ void Tron::paintEvent(QPaintEvent *e)
 			{
 				int winner = getWinner();
 				int loser = 1 - winner;
+				
 
 				QString winnerName = players[winner]->getName();
 				QString loserName = players[loser]->getName();
@@ -555,8 +559,10 @@ void Tron::doMove()
 		{
 			// Player 0 is never a computer nowadays...
 			if (players[1]->isComputer())
-			{
-				intelligence.think(1);
+			{	
+				//AI adapting based on scores
+				intelligence.think(chance - players[1]->getScore() + players[0]->getScore() ,1);
+
 			}
 
 			movementHelper(false);
@@ -662,16 +668,16 @@ void Tron::checkHeadToHeadCollision()
 int Tron::lineSpeed() {
 	switch (Kg::difficultyLevel()) {
 		case KgDifficultyLevel::VeryEasy:
-			return 2;
+			return 3;
 		default:
 		case KgDifficultyLevel::Easy:
 			return 3;
 		case KgDifficultyLevel::Medium:
-			return 5;
+			return 3;
 		case KgDifficultyLevel::Hard:
-			return 7;
+			return 3;
 		case KgDifficultyLevel::VeryHard:
-			return 8;
+			return 3;
 	}
 }
 

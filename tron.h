@@ -117,6 +117,7 @@ class Tron : public QWidget
 		int blockWidth;
 		/** counter for the number of moves, modulo 20 */
 		int modMoves;
+		int chance;
 
 	private:
 		// Functions

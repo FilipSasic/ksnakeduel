@@ -24,7 +24,9 @@
 #ifndef INTELLIGENCE_H
 #define INTELLIGENCE_H
 
+#include <vector>
 #include <math.h>
+#include <fstream>
 #include <krandomsequence.h>
 
 class Tron;
@@ -36,14 +38,19 @@ class Intelligence
 {
 	public:
 		Intelligence();
-		void think(int playerNumber);
+		/** main function for AI */
+		void think(int chance,int playerNumber);
 		void referenceTron(Tron *t);
 		
 	private:
+		/** helper think function that uses heursitics for better results */
+		void think_better(int chance,int playerNumber);
 		/** retrieves the opponentSkill */
 		int opponentSkill();
 		/** changeDirection helper for think(playerNr) */
 		void changeDirection(int playerNr,int dis_right,int dis_left);
+		/** find shortest path to all reachable fields */
+		void dijkstra(std::vector<std::vector <int>>& distances,int posX,int posY);
 		
 		Tron *m_tron;
 		/** The random sequence generator **/
